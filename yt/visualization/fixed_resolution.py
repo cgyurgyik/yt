@@ -13,12 +13,19 @@ from yt.utilities.lib.pixelization_routines import \
     pixelize_cylinder
 from yt.utilities.lib.api import add_points_to_greyscale_image
 from yt.frontends.stream.api import load_uniform_grid
+from yt.data_objects.data_containers import YTDataContainer
+from yt.data_objects.static_output import Dataset
+import yt.units.dimensions as dims
 
 import numpy as np
 import weakref
 import types
 
-class FixedResolutionBuffer(object):
+import traitlets
+from yt.utilities.traitlets_support import \
+    YTDimensionfulTrait, YTPositionTrait
+
+class FixedResolutionBuffer(traitlets.HasTraits):
     r"""
     FixedResolutionBuffer(data_source, bounds, buff_size, antialias = True)
 
@@ -71,17 +78,24 @@ class FixedResolutionBuffer(object):
                        ('index', 'r'), ('index', 'dr'),
                        ('index', 'phi'), ('index', 'dphi'),
                        ('index', 'theta'), ('index', 'dtheta'))
+    antialias = traitlets.Bool(True)
+    buff_size = traitlets.Tuple(traitlets.Int(), traitlets.Int())
+    period = traitlets.Tuple(YTDimensionfulTrait(dimensions = dims.length),
+                             YTDimensionfulTrait(dimensions = dims.length))
+    periodic = traitlets.Bool(True)
+    bounds = traitlets.List(YTDimensionfulTrait(dimensions = dims.length))
+    axis = traitlets.Enum([0,1,2,3,4])
+    data_source = traitlets.Instance(YTDataContainer)
+    ds = traitlets.Instance(Dataset, allow_none = True)
+
     def __init__(self, data_source, bounds, buff_size, antialias=True,
                  periodic=False):
-        self.data_source = data_source
-        self.ds = data_source.ds
-        self.bounds = bounds
-        self.buff_size = (int(buff_size[0]), int(buff_size[1]))
-        self.antialias = antialias
+        super().__init__(data_source = data_source, bounds = bounds,
+                         antialias = antialias, buff_size = buff_size,
+                         periodic = periodic, ds = data_source.ds,
+                         axis = data_source.axis)
         self.data = {}
         self._filters = []
-        self.axis = data_source.axis
-        self.periodic = periodic
 
         ds = getattr(data_source, "ds", None)
         if ds is not None:
