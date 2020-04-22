@@ -1055,7 +1055,8 @@ class PhasePlot(ImagePlotContainer):
             else:
                 cmap = self._colormaps[f]
 
-            masked_data = np.ma.masked_array(data, ~self.profile.used)
+            masked_data = data.copy()
+            masked_data[~self.profile.used] = np.nan
             self.plots[f] = PhasePlotMPL(self.profile.x, self.profile.y, masked_data,
                                          x_scale, y_scale, z_scale,
                                          cmap, zlim,
@@ -1568,9 +1569,9 @@ class PhasePlotMPL(ImagePlotMPL):
             norm = matplotlib.colors.Normalize(zlim[0], zlim[1])
         self.image = None
         self.cb = None
-        self.image = self.axes.pcolormesh(np.asanyarray(x_data),
-                                          np.asanyarray(y_data),
-                                          np.asanyarray(image_data.T),
+        self.image = self.axes.pcolormesh(np.array(x_data),
+                                          np.array(y_data),
+                                          np.array(image_data.T),
                                           norm=norm,
                                           cmap=cmap)
 
